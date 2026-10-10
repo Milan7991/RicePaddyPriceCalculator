@@ -53,7 +53,7 @@ header p { margin: 0; color: var(--muted); max-width: 60ch; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
 
 .inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
-.field { display: grid; gap: 6px; min-width: 0; }
+.field { display: grid; gap: 6px; min-width: 0; align-content: start; }
 .field label {
   font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
 }
@@ -121,8 +121,40 @@ tbody tr:hover td { background: var(--row-hi); }
 .btn-reset { background: var(--surface); color: var(--fg); border-color: var(--line); }
 .btn-reset:hover { background: var(--row-hi); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-@media (max-width: 380px) { .actions { grid-template-columns: 1fr; } }
 .note { font-size: 0.82rem; color: var(--muted); max-width: 65ch; }
+/* Phone layout */
+@media (max-width: 600px) {
+  body { padding-block: 18px 32px; font-size: 15px; }
+  .wrap { gap: 16px; }
+  header p { font-size: 0.92rem; }
+  .card { padding: 16px; border-radius: 10px; }
+  .inputs { grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+  .field.f-rate, .field.f-moist { grid-column: 1 / -1; }
+  .field.f-base { grid-row: 3; }
+  .field.f-qty { grid-row: 3; }
+  .field label { font-size: 0.7rem; }
+  .input-box input { font-size: 1.1rem; padding-block: 12px; }
+  .hint { font-size: 0.72rem; }
+  .slider-row { margin-top: 14px; }
+  .slider-row input[type=range] { height: 28px; }
+  .answer { gap: 12px; }
+  .big { font-size: 2.4rem; }
+  .stats { grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+  .stat .k { font-size: 0.72rem; line-height: 1.3; }
+  .stat .v { font-size: 0.95rem; }
+  table { min-width: 0; }
+  th, td { padding: 9px 6px; }
+  th { font-size: 0.64rem; letter-spacing: 0.03em; white-space: normal; vertical-align: bottom; }
+  td { font-size: 0.86rem; }
+  tr.base td:first-child::after { display: block; font-size: 0.6rem; }
+  .actions { position: sticky; bottom: env(safe-area-inset-bottom, 0px); background: var(--bg); padding-block: 10px; margin-inline: -16px; padding-inline: 16px; border-top: 1px solid var(--line); }
+  .actions { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn { font-size: 0.95rem; padding: 12px; min-height: 48px; }
+}
+@media (max-width: 360px) {
+  .actions { grid-template-columns: 1fr; }
+  .big { font-size: 2.1rem; }
+}
 @media (prefers-reduced-motion: no-preference) { .big { transition: color .2s; } }
 </style>
 </head>
@@ -136,20 +168,20 @@ tbody tr:hover td { background: var(--row-hi); }
 
   <section class="card">
     <div class="inputs">
-      <div class="field">
+      <div class="field f-rate">
         <label for="rate">Today's rate at base moisture</label>
         <div class="input-box pre"><span class="prefix">₹</span><input id="rate" type="number" inputmode="decimal" min="0" step="1" value="2500" placeholder="2500"><span class="unit">/qtl</span></div>
       </div>
-      <div class="field">
+      <div class="field f-base">
         <label for="base">Base moisture</label>
         <div class="input-box"><input id="base" type="number" inputmode="decimal" min="0" max="50" step="0.1" value="15"><span class="unit">%</span></div>
-        <span class="hint">Market rate is quoted at this moisture</span>
+        <span class="hint">Rate is quoted at this</span>
       </div>
-      <div class="field">
+      <div class="field f-moist">
         <label for="moist">Seller's paddy moisture</label>
         <div class="input-box"><input id="moist" type="number" inputmode="decimal" min="0" max="50" step="0.1" value="22" placeholder="e.g. 22"><span class="unit">%</span></div>
       </div>
-      <div class="field">
+      <div class="field f-qty">
         <label for="qty">Quantity (optional)</label>
         <div class="input-box"><input id="qty" type="number" inputmode="decimal" min="0" step="0.01" value="100" placeholder="e.g. 100"><span class="unit">qtl</span></div>
       </div>
@@ -170,7 +202,7 @@ tbody tr:hover td { background: var(--row-hi); }
     </div>
     <div class="stats">
       <div class="stat"><div class="k">Dry grain in 1 qtl</div><div class="v" id="dry">—</div></div>
-      <div class="stat"><div class="k">Water you'd pay for in 1 qtl</div><div class="v" id="water">—</div></div>
+      <div class="stat"><div class="k">Water in 1 qtl</div><div class="v" id="water">—</div></div>
       <div class="stat"><div class="k">Total for quantity</div><div class="v" id="total">—</div></div>
       <div class="stat"><div class="k">Saved vs base rate</div><div class="v" id="saved">—</div></div>
     </div>
@@ -182,7 +214,7 @@ tbody tr:hover td { background: var(--row-hi); }
     <p class="sub">Tap a row to load that moisture above.</p>
     <div class="table-scroll">
       <table>
-        <thead><tr><th>Moisture</th><th>Dry grain / qtl</th><th>Max rate ₹/qtl</th><th>vs base</th></tr></thead>
+        <thead><tr><th>Moisture</th><th>Grain / qtl</th><th>Max ₹/qtl</th><th>vs base</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
