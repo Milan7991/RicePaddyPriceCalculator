@@ -1,0 +1,215 @@
+<title>Paddy Moisture Rate Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one working column — inputs card, big answer, then the full moisture table */
+:root {
+  --bg: #f3f5f2;
+  --surface: #ffffff;
+  --fg: #1c2620;
+  --muted: #5d6b62;
+  --line: #d9e0da;
+  --accent: #2f6b45;     /* paddy-field green */
+  --grain: #c8901c;      /* ripe grain gold */
+  --grain-soft: #f6ebd3;
+  --good: #2f6b45;
+  --warn: #a8551f;
+  --row-hi: #e7efe9;
+  --font-display: "Sora", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121814; --surface: #1a221d; --fg: #e6ece7; --muted: #9aa89f; --line: #2c3830;
+    --accent: #6fbf8b; --grain: #e2b04a; --grain-soft: #3a2f17; --good: #6fbf8b; --warn: #e48a55; --row-hi: #22302700;
+    --row-hi: #223027; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121814; --surface: #1a221d; --fg: #e6ece7; --muted: #9aa89f; --line: #2c3830;
+  --accent: #6fbf8b; --grain: #e2b04a; --grain-soft: #3a2f17; --good: #6fbf8b; --warn: #e48a55;
+  --row-hi: #223027; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-inline: 16px; padding-block: 28px 48px;
+}
+.wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 22px; }
+header h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: clamp(1.5rem, 4.5vw, 2rem);
+  margin: 0 0 6px; text-wrap: balance; letter-spacing: -0.01em;
+}
+header p { margin: 0; color: var(--muted); max-width: 60ch; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+
+.inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field label {
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+}
+.input-box { position: relative; display: flex; align-items: center; }
+.input-box input {
+  width: 100%; font-family: var(--font-num); font-size: 1.15rem; font-weight: 600;
+  color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 44px 10px 12px; font-variant-numeric: tabular-nums;
+}
+.input-box.pre input { padding-left: 28px; }
+.input-box .unit { position: absolute; right: 12px; color: var(--muted); font-size: 0.85rem; pointer-events: none; }
+.input-box .prefix { position: absolute; left: 12px; color: var(--muted); font-family: var(--font-num); pointer-events: none; }
+.input-box input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.hint { font-size: 0.78rem; color: var(--muted); }
+
+.slider-row { margin-top: 18px; display: grid; gap: 6px; }
+.slider-row input[type=range] { width: 100%; accent-color: var(--grain); }
+.ticks { display: flex; justify-content: space-between; font-family: var(--font-num); font-size: 0.72rem; color: var(--muted); }
+
+.answer { display: grid; gap: 16px; border-color: var(--grain); background: linear-gradient(0deg, var(--surface), var(--surface)); }
+.answer-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; }
+.answer .label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.big {
+  font-family: var(--font-display); font-weight: 700; font-size: clamp(2.2rem, 9vw, 3.2rem);
+  line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--fg);
+}
+.big small { font-family: var(--font-body); font-size: 0.95rem; font-weight: 500; color: var(--muted); margin-left: 4px; }
+.pill {
+  display: inline-block; font-family: var(--font-num); font-size: 0.85rem; font-weight: 600;
+  padding: 4px 10px; border-radius: 999px; background: var(--grain-soft); color: var(--fg);
+}
+.pill.down { color: var(--warn); }
+.pill.up { color: var(--good); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; border-top: 1px dashed var(--line); padding-top: 14px; }
+.stat .k { font-size: 0.75rem; color: var(--muted); }
+.stat .v { font-family: var(--font-num); font-weight: 600; font-size: 1.02rem; font-variant-numeric: tabular-nums; }
+.formula { font-size: 0.82rem; color: var(--muted); font-family: var(--font-num); overflow-wrap: anywhere; }
+
+h2 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; margin: 0 0 4px; }
+.sub { margin: 0 0 14px; color: var(--muted); font-size: 0.88rem; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 420px; }
+th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+td { font-family: var(--font-num); font-size: 0.92rem; }
+tr.base td { font-weight: 600; }
+tr.base td:first-child::after { content: " base"; font-family: var(--font-body); font-size: 0.7rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; }
+tr.sel td { background: var(--row-hi); }
+td.down { color: var(--warn); }
+td.up { color: var(--good); }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: var(--row-hi); }
+
+.note { font-size: 0.82rem; color: var(--muted); max-width: 65ch; }
+@media (prefers-reduced-motion: no-preference) { .big { transition: color .2s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Paddy Moisture Rate Calculator</h1>
+    <p>Enter today's mandi rate for 15% moisture paddy. The calculator shows the most you can pay for paddy at any other moisture so that you pay the same price for the actual grain inside it.</p>
+  </header>
+
+  <section class="card">
+    <div class="inputs">
+      <div class="field">
+        <label for="rate">Today's rate at base moisture</label>
+        <div class="input-box pre"><span class="prefix">₹</span><input id="rate" type="number" inputmode="decimal" min="0" step="1" value="2500"><span class="unit">/qtl</span></div>
+      </div>
+      <div class="field">
+        <label for="base">Base moisture</label>
+        <div class="input-box"><input id="base" type="number" inputmode="decimal" min="0" max="50" step="0.1" value="15"><span class="unit">%</span></div>
+        <span class="hint">Market rate is quoted at this moisture</span>
+      </div>
+      <div class="field">
+        <label for="moist">Seller's paddy moisture</label>
+        <div class="input-box"><input id="moist" type="number" inputmode="decimal" min="0" max="50" step="0.1" value="22"><span class="unit">%</span></div>
+      </div>
+      <div class="field">
+        <label for="qty">Quantity (optional)</label>
+        <div class="input-box"><input id="qty" type="number" inputmode="decimal" min="0" step="0.01" value="100"><span class="unit">qtl</span></div>
+      </div>
+    </div>
+    <div class="slider-row">
+      <input id="slider" type="range" min="10" max="32" step="0.5" value="22" aria-label="Seller's paddy moisture">
+      <div class="ticks"><span>10%</span><span>15%</span><span>20%</span><span>25%</span><span>32%</span></div>
+    </div>
+  </section>
+
+  <section class="card answer" aria-live="polite">
+    <div class="answer-top">
+      <div>
+        <div class="label" id="ansLabel">Max rate for 22% paddy</div>
+        <div class="big"><span id="ans">₹0</span><small>/qtl</small></div>
+      </div>
+      <span class="pill" id="diff">—</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Dry grain in 1 qtl</div><div class="v" id="dry">—</div></div>
+      <div class="stat"><div class="k">Water you'd pay for in 1 qtl</div><div class="v" id="water">—</div></div>
+      <div class="stat"><div class="k">Total for quantity</div><div class="v" id="total">—</div></div>
+      <div class="stat"><div class="k">Saved vs base rate</div><div class="v" id="saved">—</div></div>
+    </div>
+    <div class="formula" id="formula"></div>
+  </section>
+
+  <section class="card">
+    <h2>Rate chart for today</h2>
+    <p class="sub">Tap a row to load that moisture above.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Moisture</th><th>Dry grain / qtl</th><th>Max rate ₹/qtl</th><th>vs base</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="note">This uses the dry matter (grain) content only. Drying cost, handling loss and quality cuts for wet paddy are not included, so treat these as the break-even maximum and offer slightly below it.</p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const inr = n => "₹" + Math.round(n).toLocaleString("en-IN");
+const num = (el, d) => { const v = parseFloat(el.value); return isFinite(v) ? v : d; };
+
+// Equal price per kg of dry grain: rate_m = rate_base × (100 − m) / (100 − base)
+function maxRate(rate, base, m) { return rate * (100 - m) / (100 - base); }
+
+function render() {
+  const rate = num($("rate"), 0), base = num($("base"), 15), m = num($("moist"), base), qty = num($("qty"), 0);
+  const r = maxRate(rate, base, m);
+  const d = r - rate;
+
+  $("ansLabel").textContent = `Max rate for ${m}% paddy`;
+  $("ans").textContent = inr(r);
+  const pill = $("diff");
+  pill.className = "pill " + (d < -0.5 ? "down" : d > 0.5 ? "up" : "");
+  pill.textContent = Math.abs(d) < 0.5 ? "Same as base" : `${d > 0 ? "+" : "−"}${inr(Math.abs(d))} (${d > 0 ? "+" : "−"}${Math.abs(d / rate * 100).toFixed(2)}%)`;
+
+  $("dry").textContent = `${(100 - m).toFixed(1)} kg`;
+  $("water").textContent = `${m.toFixed(1)} kg`;
+  $("total").textContent = qty > 0 ? inr(r * qty) : "—";
+  $("saved").textContent = qty > 0 ? (d <= 0 ? inr(-d * qty) : "Pay " + inr(d * qty) + " more") : "—";
+  $("formula").textContent = `${inr(rate)} × (100 − ${m}) ÷ (100 − ${base}) = ${inr(r)}`;
+
+  if (document.activeElement !== $("slider")) $("slider").value = m;
+
+  const rows = [];
+  for (let x = 12; x <= 30; x++) {
+    const rx = maxRate(rate, base, x), dx = rx - rate;
+    const cls = [x === base ? "base" : "", Math.abs(x - m) < 0.01 ? "sel" : ""].join(" ");
+    rows.push(`<tr class="${cls}" data-m="${x}"><td>${x}%</td><td>${100 - x} kg</td><td>${inr(rx)}</td><td class="${dx < -0.5 ? "down" : dx > 0.5 ? "up" : ""}">${Math.abs(dx) < 0.5 ? "—" : (dx > 0 ? "+" : "−") + inr(Math.abs(dx))}</td></tr>`);
+  }
+  $("tbody").innerHTML = rows.join("");
+}
+
+["rate", "base", "moist", "qty"].forEach(id => $(id).addEventListener("input", render));
+$("slider").addEventListener("input", e => { $("moist").value = e.target.value; render(); });
+$("tbody").addEventListener("click", e => {
+  const tr = e.target.closest("tr"); if (!tr) return;
+  $("moist").value = tr.dataset.m; render();
+});
+render();
+</script>
